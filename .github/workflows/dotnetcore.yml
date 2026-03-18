@@ -1,22 +1,57 @@
 name: eShopOnWeb Build and Test
 
-#Triggers (uncomment line below to use it)
-on: [push, pull_request, workflow_dispatch]
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v5
+      - name: Checkout
+        uses: actions/checkout@v2
+
       - name: Setup .NET
-        uses: actions/setup-dotnet@v5
+        uses: actions/setup-dotnet@v1
         with:
-          dotnet-version: "8.0.x"
-          dotnet-quality: "preview"
+          dotnet-version: '6.0.x'
 
-      - name: Build with dotnet
-        run: dotnet build ./eShopOnWeb.sln --configuration Release
+      - name: Restore
+        run: dotnet restore
 
-      - name: Test with dotnet
-        run: dotnet test ./eShopOnWeb.sln --configuration Release
+      - name: Build
+        run: dotnet build --configuration Release --no-restore
+
+      - name: Test
+        run: dotnet test --no-build --verbosity normal
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build   # ensures deploy runs only after build succeeds
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Login to Azure
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Deploy to West Europe WebApp
+        uses: azure/webapps-deploy@v2
+        with:
+          app-name: devops-webapp-westeurope-620322177   # replace with the name you generated
+          slot-name: production
+          package: .
+
+      - name: Deploy to East US WebApp
+        uses: azure/webapps-deploy@v2
+        with:
+          app-name: devops-webapp-eastus-1562830604      # replace with the name you generated
+          slot-name: production
+          package: .
