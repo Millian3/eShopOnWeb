@@ -30,7 +30,7 @@ jobs:
         run: dotnet build eShopOnWeb.sln --configuration Release --no-restore
 
       - name: Test
-        run: dotnet test eShopOnWeb.sln --no-build --verbosity normal
+        run: dotnet test eShopOnWeb.sln --configuration Release --no-build --verbosity normal
 
   deploy:
     runs-on: ubuntu-latest
